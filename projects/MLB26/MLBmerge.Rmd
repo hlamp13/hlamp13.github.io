@@ -1,0 +1,137 @@
+---
+title: "MLBmerge"
+author: "Hayden Lamprecht"
+date: "2026-03-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+
+library(tidyverse)
+library(sandwich)
+library(haven)
+library(ggplot2)
+library(stargazer)
+library(AER)
+library(plm)
+library(fixest)
+library(dplyr)
+
+```
+
+```{r}
+
+batting <- read.csv("C:/Users/hlamp/Downloads/Batting.csv")
+
+```
+
+```{r}
+
+career_batting <- batting %>%
+  group_by(playerID) %>%
+  summarize(
+    G = sum(G, na.rm = TRUE),
+    AB = sum(AB, na.rm = TRUE),
+    R = sum(R, na.rm = TRUE),
+    H = sum(H, na.rm = TRUE),
+    X2B = sum(X2B, na.rm = TRUE),
+    X3B = sum(X3B, na.rm = TRUE),
+    HR = sum(HR, na.rm = TRUE),
+    RBI = sum(RBI, na.rm = TRUE),
+    SB = sum(SB, na.rm = TRUE),
+    CS = sum(CS, na.rm = TRUE),
+    BB = sum(BB, na.rm = TRUE),
+    SO = sum(SO, na.rm = TRUE),
+    IBB = sum(IBB, na.rm = TRUE),
+    HBP = sum(HBP, na.rm = TRUE),
+    SH = sum(SH, na.rm = TRUE),
+    SF = sum(SF, na.rm = TRUE),
+    GIDP = sum(GIDP, na.rm = TRUE)
+  )
+
+career_batting$PA <- career_batting$AB+career_batting$BB+career_batting$HBP+career_batting$SH+career_batting$SF
+
+career_batting$BA <- career_batting$H/career_batting$AB
+
+career_batting$OBP <- (career_batting$H+career_batting$BB+career_batting$HBP)/career_batting$PA
+
+career_batting$SLG <- ((career_batting$H-(career_batting$X2B+career_batting$X3B+career_batting$HR))+(career_batting$X2B*2)+(career_batting$X3B*3)+(career_batting$HR*4))/career_batting$AB
+
+```
+
+
+```{r}
+
+pitching <- read.csv("C:/Users/hlamp/Downloads/Pitching.csv")
+
+career_pitching <- pitching %>%
+  group_by(playerID) %>%
+  summarise(
+    W = sum(W, na.rm = TRUE),
+    L = sum(L, na.rm = TRUE),
+    ERA = sum(ERA, na.rm = TRUE),
+    G = sum(G, na.rm = TRUE),
+    GS = sum(GS, na.rm = TRUE),
+    GF = sum(GF, na.rm = TRUE),
+    CG = sum(CG, na.rm = TRUE),
+    SHO = sum(SHO, na.rm = TRUE),
+    SV = sum(SV, na.rm = TRUE),
+    H = sum(H, na.rm = TRUE),
+    R = sum(R, na.rm = TRUE),
+    ER = sum(ER, na.rm = TRUE),
+    HR = sum(HR, na.rm = TRUE),
+    BB = sum(BB, na.rm = TRUE),
+    IBB = sum(IBB, na.rm = TRUE),
+    SO = sum(SO, na.rm = TRUE),
+    HBP = sum(HBP, na.rm = TRUE),
+    BK = sum(BK, na.rm = TRUE)
+  )
+
+career_pitching$IP <- career_pitching$IPouts/3
+career_pitching$WLpercentage <- career_pitching$W/(career_pitching$W+career_pitching$L)
+
+
+```
+
+```{r}
+
+write.csv(career_batting, "careerbatting.csv", row.names = TRUE, fileEncoding = "UTF-8")
+
+write.csv(career_pitching, "careerpitching.csv", row.names = TRUE, fileEncoding = "UTF-8")
+
+```
+
+
+```{r}
+
+fielding <- read.csv("C:/Users/hlamp/Downloads/Fielding.csv")
+
+player_primary_pos <- fielding %>%
+  group_by(playerID, POS) %>%
+  summarise(total_games = sum(G), .groups = "drop") %>%
+  group_by(playerID) %>%
+  slice_max(total_games, n=1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(playerID, primary_pos = POS)
+  
+
+```
+
+
+```{r}
+
+write.csv(player_primary_pos, "career_position.csv", row.names = TRUE, fileEncoding = "UTF-8")
+
+```
+
+

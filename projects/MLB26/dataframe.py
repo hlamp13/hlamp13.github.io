@@ -54,3 +54,16 @@ df9 = pd.read_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13.gith
 merged_playerid_3 = df9.merge(df6, on = "playerID", how = "left")
 
 merged_playerid_3.to_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13.github.io\\projects\\MLB26\\mlb_merged_missing_values.csv", index=False, encoding="utf-8-sig")
+
+###
+df10 = pd.read_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13.github.io\\projects\\MLB26\\mlb_merged_missing_values.csv", encoding="utf-8-sig")
+
+merged_missing_pitch = df10.merge(df8, on = "playerID", how = "left")
+
+merged_missing_pitch.to_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13.github.io\\projects\\MLB26\\mlb_merged_missing_values_pitch.csv", index=False, encoding="utf-8-sig")
+
+position = pd.read_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13.github.io\\projects\\MLB26\\careerposition.csv", encoding="latin1")
+
+final = pd.read_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13.github.io\\projects\\MLB26\\full_mlb_stats.csv", encoding="utf-8-sig")
+
+mlb_with_position = final.merge(position, on = "playerID", how = "left")

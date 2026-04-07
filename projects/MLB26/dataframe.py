@@ -67,3 +67,5 @@ position = pd.read_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13
 final = pd.read_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13.github.io\\projects\\MLB26\\full_mlb_stats.csv", encoding="utf-8-sig")
 
 mlb_with_position = final.merge(position, on = "playerID", how = "left")
+
+mlb_with_position.to_csv("C:\\Users\\hlamp\\OneDrive\\IndependentResearch\\hlamp13.github.io\\projects\\MLB26\\full_mlb_stats_with_position.csv", index=False, encoding="utf-8-sig")

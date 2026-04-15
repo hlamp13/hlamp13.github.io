@@ -1,0 +1,332 @@
+---
+title: "Main Data"
+author: "Hayden Lamprecht"
+date: "2026-04-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+library(stargazer)
+library(AER)
+library(plm)
+library(fixest)
+library(dplyr)
+library(lme4)
+
+```
+
+
+```{r}
+
+d <- read.csv("C:/Users/hlamp/OneDrive/IndependentResearch/hlamp13.github.io/projects/MLB26/full_mlb_stats_with_position.csv")
+
+head(d)
+
+```
+
+
+```{r}
+
+retired_d <- d %>% filter(Active..1.0. == 0)
+
+bat_vars <- d[, c("tot_WAR", "Years", "bat_ASG", "bat_AB", "bat_H", "bat_HR", "bat_RBI", "bat_SB", "bat_BB", "bat_SO", "bat_BA", "bat_OBP", "bat_SLG", "bat_OPS")]
+pit_vars <- d[, c("tot_WAR", "Years", "pit_ASG", "pit_W", "pit_L", "ERA_x", "pit_G", "pit_IP", "pit_H", "pit_BB", "pit_SO")]
+
+summary(
+  retired_d[
+    , c("HOF..1.0.", "tot_WAR", "Years")
+  ]
+)
+
+```
+
+```{r}
+
+cor(bat_vars, use = "complete.obs")
+
+cor(pit_vars, use = "complete.obs")
+
+```
+## Testing different models. All will include tot_WAR, Years, ASG. (Potential to not include ASG in future)
+### Pitching: ERA, SO, W, L
+### 6 Models:
+### - BASE
+### - ERA
+### - ERA, SO
+### - ERA, W
+### - ERA, L
+### - L
+
+### Batting: HR, SB, BA, OBP, SLG, OPS, RBI, BB, H
+### 12 Models:
+### - BASE
+### - HR
+### - HR, SB
+### - BA
+### - OBP
+### - SLG
+### - OPS
+### - BA, HR
+### - RBI
+### - RBI, SB
+### - BB
+### - H
+
+```{r}
+
+retired_bat_d <- retired_d %>% filter(primary_pos %in% c("C", "1B", "2B", "3B", "SS", "OF"))
+retired_pit_d <- retired_d %>% filter(primary_pos %in% c("P"))
+
+```
+
+```{r}
+
+base_pit <- glm(
+  HOF..1.0. ~ tot_WAR + Years,
+  data = retired_pit_d, family = binomial
+)
+
+era_pit <- glm(
+  HOF..1.0. ~ tot_WAR + Years + ERA_x,
+  data = retired_pit_d, family = binomial
+)
+
+era_so_pit <- glm(
+  HOF..1.0. ~ tot_WAR + Years + ERA_x + pit_SO,
+  data = retired_pit_d, family = binomial
+)
+
+era_W_pit <- glm(
+  HOF..1.0. ~ tot_WAR + Years + ERA_x + pit_W,
+  data = retired_pit_d, family = binomial
+)
+
+era_L_pit <- glm(
+  HOF..1.0. ~ tot_WAR + Years + ERA_x + pit_L,
+  data = retired_pit_d, family = binomial
+)
+
+L_pit <- glm(
+  HOF..1.0. ~ tot_WAR + Years + pit_L,
+  data = retired_pit_d, family = binomial
+)
+
+```
+
+
+```{r}
+
+AIC(base_pit, era_pit, era_so_pit, era_W_pit, era_L_pit, L_pit)
+
+```
+
+
+
+
+```{r}
+
+base_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years,
+  data = retired_bat_d, family = binomial
+)
+
+HR_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_HR,
+  data = retired_bat_d, family = binomial
+)
+
+HR_SB_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_HR + bat_SB,
+  data = retired_bat_d, family = binomial
+)
+
+BA_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_BA,
+  data = retired_bat_d, family = binomial
+)
+
+OBP_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_OBP,
+  data = retired_bat_d, family = binomial
+)
+
+SLG_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_SLG,
+  data = retired_bat_d, family = binomial
+)
+OPS_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_OPS,
+  data = retired_bat_d, family = binomial
+)
+
+BA_HR_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_BA + bat_HR,
+  data = retired_bat_d, family = binomial
+)
+
+RBI_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_RBI,
+  data = retired_bat_d, family = binomial
+)
+
+RBI_SB_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_RBI + bat_SB,
+  data = retired_bat_d, family = binomial
+)
+
+BB_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_BB,
+  data = retired_bat_d, family = binomial
+)
+
+H_bat <- glm(
+  HOF..1.0. ~ tot_WAR + Years + bat_H,
+  data = retired_bat_d, family = binomial
+)
+
+```
+
+
+```{r}
+
+AIC(base_bat, HR_bat, HR_SB_bat, BA_bat, OBP_bat, SLG_bat, OPS_bat, BA_HR_bat, RBI_bat, RBI_SB_bat, BB_bat, H_bat)
+
+```
+
+### FULL RETIRED DATASET
+
+```{r}
+
+base_model <- glm(
+  HOF..1.0. ~ tot_WAR + Years,
+  data = retired_d, family = binomial
+)
+
+stargazer(base_model, type = "text")
+
+```
+
+
+```{r}
+
+random_int <- glmer(
+  HOF..1.0. ~ tot_WAR + Years + (1|primary_pos),
+  data = retired_d, family = binomial  
+)
+
+random_slope <- glmer(
+  HOF..1.0. ~ tot_WAR + Years + (tot_WAR|primary_pos),
+  data = retired_d, family = binomial
+)
+
+AIC(random_int, random_slope)
+ranef(random_slope)
+
+```
+
+
+```{r}
+
+war_C <- fixef(random_slope)["tot_WAR"] +
+  ranef(random_slope)$primary_pos["C", "tot_WAR"]
+
+war_1B <- fixef(random_slope)["tot_WAR"] +
+  ranef(random_slope)$primary_pos["1B", "tot_WAR"]
+
+war_2B <- fixef(random_slope)["tot_WAR"] +
+  ranef(random_slope)$primary_pos["2B", "tot_WAR"]
+
+war_3B <- fixef(random_slope)["tot_WAR"] +
+  ranef(random_slope)$primary_pos["3B", "tot_WAR"]
+
+war_SS <- fixef(random_slope)["tot_WAR"] +
+  ranef(random_slope)$primary_pos["SS", "tot_WAR"]
+
+war_OF <- fixef(random_slope)["tot_WAR"] +
+  ranef(random_slope)$primary_pos["OF", "tot_WAR"]
+
+war_P <- fixef(random_slope)["tot_WAR"] +
+  ranef(random_slope)$primary_pos["P", "tot_WAR"]
+
+```
+
+```{r}
+
+tot_effects <- data.frame(
+  Position = c("C", "1B", "2B", "3B", "SS", "OF", "P"),
+  LogOdds = c(war_C, war_1B, war_2B, war_3B, war_SS, war_OF, war_P),
+  OddsRation = c(exp(war_C), exp(war_1B), exp(war_2B), exp(war_3B), exp(war_SS), exp(war_OF), exp(war_P))
+)
+
+tot_effects
+
+```
+
+```{r}
+
+re <- ranef(random_slope)$primary_pos
+
+re_df <- data.frame(
+  pos = rownames(re),
+  slope = re[, "tot_WAR"]
+)
+
+ggplot(re_df, aes(x = reorder(pos, slope), y = slope)) + 
+  geom_point(size = 3) + 
+  coord_flip() +
+  labs(
+    title = "Random WAR Effect by Position",
+    x = "Position",
+    y = "WAR Slope Adjustment"
+  )
+
+```
+
+###RETIRED BATTERS ONLY
+
+```{r}
+
+base_bat_model <- glm(
+  HOF..1.0. ~ tot_WAR + Years,
+  data = retired_bat_d, family = binomial
+)
+
+base_pit_model <- glm(
+  HOF..1.0. ~ tot_WAR + Years,
+  data = retired_pit_d, family = binomial
+)
+
+stargazer(base_bat_model, base_pit_model, type = "text")
+
+```
+
+
+```{r}
+
+model3 <- glm(
+  HOF..1.0. ~ tot_WAR + Years + ERA_x + pit_W + bat_HR,
+  data = retired_d, family = binomial
+)
+
+summary(model3)
+
+```
+
+
+
+
+
+

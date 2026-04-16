@@ -46,12 +46,34 @@ bat_vars <- d[, c("tot_WAR", "Years", "bat_ASG", "bat_AB", "bat_H", "bat_HR", "b
 pit_vars <- d[, c("tot_WAR", "Years", "pit_ASG", "pit_W", "pit_L", "ERA_x", "pit_G", "pit_IP", "pit_H", "pit_BB", "pit_SO")]
 
 summary(
+  d[
+    , c("HOF..1.0.", "tot_WAR", "Years", "bat_H", "bat_HR", "bat_RBI", "bat_BB", "bat_SO", "ERA_x", "pit_IP", "pit_BB", "pit_SO")
+  ]
+)
+
+summary(
   retired_d[
     , c("HOF..1.0.", "tot_WAR", "Years")
   ]
 )
 
 ```
+
+
+## Linear Model
+```{r}
+
+linear_model <- lm(
+  HOF..1.0. ~ tot_WAR + Years,
+  data = retired_d
+)
+
+summary(linear_model)
+
+```
+
+
+## Testing for correlation
 
 ```{r}
 
@@ -134,8 +156,6 @@ AIC(base_pit, era_pit, era_so_pit, era_W_pit, era_L_pit, L_pit)
 ```
 
 
-
-
 ```{r}
 
 base_bat <- glm(
@@ -206,6 +226,74 @@ AIC(base_bat, HR_bat, HR_SB_bat, BA_bat, OBP_bat, SLG_bat, OPS_bat, BA_HR_bat, R
 
 ```
 
+## Now the same models but without tot_WAR
+
+```{r}
+
+HR_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_HR,
+  data = retired_bat_d, family = binomial
+)
+
+HR_SB_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_HR + bat_SB,
+  data = retired_bat_d, family = binomial
+)
+
+BA_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_BA,
+  data = retired_bat_d, family = binomial
+)
+
+OBP_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_OBP,
+  data = retired_bat_d, family = binomial
+)
+
+SLG_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_SLG,
+  data = retired_bat_d, family = binomial
+)
+OPS_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_OPS,
+  data = retired_bat_d, family = binomial
+)
+
+BA_HR_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_BA + bat_HR,
+  data = retired_bat_d, family = binomial
+)
+
+RBI_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_RBI,
+  data = retired_bat_d, family = binomial
+)
+
+RBI_SB_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_RBI + bat_SB,
+  data = retired_bat_d, family = binomial
+)
+
+BB_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_BB,
+  data = retired_bat_d, family = binomial
+)
+
+H_bat_2 <- glm(
+  HOF..1.0. ~ Years + bat_H,
+  data = retired_bat_d, family = binomial
+)
+
+```
+
+```{r}
+
+AIC(HR_bat_2, HR_SB_bat_2, BA_bat_2, OBP_bat_2, SLG_bat_2, OPS_bat_2, BA_HR_bat_2, RBI_bat_2, RBI_SB_bat_2, BB_bat_2, H_bat_2)
+
+```
+
+
+
 ### FULL RETIRED DATASET
 
 ```{r}
@@ -268,7 +356,7 @@ war_P <- fixef(random_slope)["tot_WAR"] +
 tot_effects <- data.frame(
   Position = c("C", "1B", "2B", "3B", "SS", "OF", "P"),
   LogOdds = c(war_C, war_1B, war_2B, war_3B, war_SS, war_OF, war_P),
-  OddsRation = c(exp(war_C), exp(war_1B), exp(war_2B), exp(war_3B), exp(war_SS), exp(war_OF), exp(war_P))
+  OddsRatio = c(exp(war_C), exp(war_1B), exp(war_2B), exp(war_3B), exp(war_SS), exp(war_OF), exp(war_P))
 )
 
 tot_effects
@@ -288,40 +376,132 @@ ggplot(re_df, aes(x = reorder(pos, slope), y = slope)) +
   geom_point(size = 3) + 
   coord_flip() +
   labs(
-    title = "Random WAR Effect by Position",
+    title = "Random WAR Effect by Position with Years",
     x = "Position",
     y = "WAR Slope Adjustment"
   )
 
 ```
 
-###RETIRED BATTERS ONLY
+
+
+
+
+## Removing Years
 
 ```{r}
 
-base_bat_model <- glm(
-  HOF..1.0. ~ tot_WAR + Years,
-  data = retired_bat_d, family = binomial
+base_model_2 <- glm(
+  HOF..1.0. ~ tot_WAR,
+  data = retired_d, family = binomial
 )
 
-base_pit_model <- glm(
-  HOF..1.0. ~ tot_WAR + Years,
-  data = retired_pit_d, family = binomial
-)
-
-stargazer(base_bat_model, base_pit_model, type = "text")
+stargazer(base_model_2, type = "text")
 
 ```
 
 
 ```{r}
 
-model3 <- glm(
-  HOF..1.0. ~ tot_WAR + Years + ERA_x + pit_W + bat_HR,
+random_int_2 <- glmer(
+  HOF..1.0. ~ tot_WAR + (1|primary_pos),
+  data = retired_d, family = binomial  
+)
+
+random_slope_2 <- glmer(
+  HOF..1.0. ~ tot_WAR + (tot_WAR|primary_pos),
   data = retired_d, family = binomial
 )
 
-summary(model3)
+AIC(random_int_2, random_slope_2)
+ranef(random_slope_2)
+
+```
+
+
+```{r}
+
+war_C_2 <- fixef(random_slope_2)["tot_WAR"] +
+  ranef(random_slope_2)$primary_pos["C", "tot_WAR"]
+
+war_1B_2 <- fixef(random_slope_2)["tot_WAR"] +
+  ranef(random_slope_2)$primary_pos["1B", "tot_WAR"]
+
+war_2B_2 <- fixef(random_slope_2)["tot_WAR"] +
+  ranef(random_slope_2)$primary_pos["2B", "tot_WAR"]
+
+war_3B_2 <- fixef(random_slope_2)["tot_WAR"] +
+  ranef(random_slope_2)$primary_pos["3B", "tot_WAR"]
+
+war_SS_2 <- fixef(random_slope_2)["tot_WAR"] +
+  ranef(random_slope_2)$primary_pos["SS", "tot_WAR"]
+
+war_OF_2 <- fixef(random_slope_2)["tot_WAR"] +
+  ranef(random_slope_2)$primary_pos["OF", "tot_WAR"]
+
+war_P_2 <- fixef(random_slope_2)["tot_WAR"] +
+  ranef(random_slope_2)$primary_pos["P", "tot_WAR"]
+
+```
+
+```{r}
+
+tot_effects_2 <- data.frame(
+  Position = c("C", "1B", "2B", "3B", "SS", "OF", "P"),
+  LogOdds = c(war_C_2, war_1B_2, war_2B_2, war_3B_2, war_SS_2, war_OF_2, war_P_2),
+  OddsRatio = c(exp(war_C_2), exp(war_1B_2), exp(war_2B_2), exp(war_3B_2), exp(war_SS_2), exp(war_OF_2), exp(war_P_2))
+)
+
+tot_effects_2
+
+```
+
+```{r}
+
+re <- ranef(random_slope_2)$primary_pos
+
+re_df <- data.frame(
+  pos = rownames(re),
+  slope = re[, "tot_WAR"]
+)
+
+ggplot(re_df, aes(x = reorder(pos, slope), y = slope)) + 
+  geom_point(size = 3) + 
+  coord_flip() +
+  labs(
+    title = "Random WAR Effect by Position without Years",
+    x = "Position",
+    y = "WAR Slope Adjustment"
+  )
+
+```
+
+
+## Shrinkage
+
+```{r}
+
+by(retired_d, retired_d$primary_pos,
+   function(d) glm(HOF..1.0. ~ tot_WAR, family=binomial, data=d))
+
+```
+
+
+
+```{r}
+
+avg_war <- retired_d %>%
+  group_by(primary_pos) %>%
+  summarize(avg_war = mean(tot_WAR, na.rm = TRUE))
+
+avg_war
+
+colnames(avg_war)[colnames(avg_war) == "primary_pos"] <- "Position"
+
+plot_df <- merge(avg_war, tot_effects_2, by = "Position")
+
+plot_df
+
 
 ```
 
